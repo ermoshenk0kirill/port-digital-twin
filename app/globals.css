@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.leaflet-container {
+  background: #e5e7eb; /* светлый фон карты */
+  height: 100%;
+  width: 100%;
+}
+
