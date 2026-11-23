@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Цифровой двойник порта Санкт-Петербург
 
-## Getting Started
+Веб-приложение для визуализации и мониторинга состояния Большого порта Санкт-Петербург на основе данных из Excel.
 
-First, run the development server:
+Интерактивная карта (MapLibre), боковая панель статистики и экспорт PDF-отчёта. Предназначено для операторов терминала и аналитиков, которым нужен быстрый обзор загруженности складов, судов, техники и персонала.
+
+## Возможности
+
+- Загрузка Excel-файла (`.xlsx` / `.xls`) с листами: `warehouses`, `vessels`, `quays`, `equipment`, `personnel`
+- Интерактивная карта порта (центр ≈ 59.891, 30.232) со слоями:
+  - склады (полигоны, цвет по типу)
+  - суда (стрелки с ориентацией)
+  - причалы (занят / свободен)
+  - техника и персонал (маркеры)
+- Переключение слоёв
+- Дашборд: количество объектов, текущая и максимальная вместимость контейнеров, загруженность складов (график)
+- Экспорт PDF-отчёта с поддержкой кириллицы
+- Всплывающие карточки объектов по клику
+
+## Требования
+
+- Node.js 18+
+- npm / yarn / pnpm
+
+## Установка
+
+```bash
+git clone https://github.com/ermoshenk0kirill/port-digital-twin.git  
+cd port-digital-twin
+npm install
+```
+
+## Быстрый старт
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Нажмите **Загрузить Excel**.
+2. Выберите файл с листами нужной структуры (см. ниже).
+3. Данные появятся на карте и в боковой панели.
+4. При необходимости переключите слои и сформируйте PDF-отчёт.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Ожидаемая структура Excel
 
-## Learn More
+Каждый лист — отдельный тип объектов. Имена листов приводятся к нижнему регистру.
 
-To learn more about Next.js, take a look at the following resources:
+**warehouses**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| name | coordinates | current_containers | max_capacity | type | width_meters | length_meters | rotation_degrees |
+|------|-------------|--------------------|--------------|------|--------------|---------------|------------------|
+| Склад А | 59.891, 30.232 | 1200 | 2000 | open / closed | 90 | 130 | 0 |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**vessels**
 
-## Deploy on Vercel
+| name | coordinates | load | status | length_meters | width_meters | rotation_degrees |
+|------|-------------|------|--------|---------------|--------------|------------------|
+| Судно-1 | 59.892, 30.230 | 85 | у причала | 120 | 40 | 45 |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**quays**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| name | coordinates | status | width_meters | length_meters | rotation_degrees |
+|------|-------------|--------|--------------|---------------|------------------|
+| Причал 5 | 59.890, 30.235 | занят / свободен | 50 | 200 | 0 |
+
+**equipment**
+
+| name | coordinates | type | status |
+|------|-------------|------|--------|
+| Кран-3 | 59.891, 30.231 | crane / client / port | в работе |
+
+**personnel**
+
+| name | coordinates | count | task |
+|------|-------------|-------|------|
+| Бригада 2 | 59.891, 30.233 | 12 | погрузка |
+
+Координаты — строка `"широта, долгота"`. Числовые поля допускают пробелы и запятую как десятичный разделитель.
+
+## Скрипты
+
+```bash
+npm run dev      # режим разработки
+npm run build    # production-сборка
+npm run start    # запуск production-сборки
+npm run lint     # ESLint (next/core-web-vitals + TypeScript)
+```
+
+## Структура проекта
+
+```
+├── app/                    # или корневые layout.tsx / page.tsx
+│   ├── layout.tsx          # корневой layout, метаданные
+│   └── page.tsx            # главная страница
+├── src/
+│   └── components/
+│       ├── Map.tsx         # карта MapLibre, слои, PDF-экспорт
+│       ├── Dashboard.tsx   # KPI и график загруженности
+│       ├── FileUploads.tsx # загрузка Excel
+│       └── LayerControls.tsx
+├── lib/
+│   └── pdfFonts.ts         # загрузка шрифта для кириллицы в jsPDF
+├── package.json
+├── next.config.ts
+├── tailwind.config.ts
+└── tsconfig.json
+```
+
+Точные пути могут отличаться в зависимости от расположения `app` и `src` в репозитории.
+
+## Разработка
+
+- Линтер: `npm run lint`
+- Карта использует публичный стиль Carto Positron (`basemaps.cartocdn.com`)
+- Для PDF требуется модуль `lib/pdfFonts` (DejaVu Sans или аналог)
+
+Автотестов и CI в репозитории нет.
+
+## Вклад
+
+Пул-реквесты приветствуются. Перед отправкой:
+
+1. `npm run lint`
+2. `npm run build`
+
+
+## Автор
+
+Ермошенко Кирилл, frontend-разработчик  
+Telegram: @qwer1y_kkk
+```
